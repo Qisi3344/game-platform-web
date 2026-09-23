@@ -4,6 +4,136 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const nowT=(ts=Date.now())=>new Date(ts).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),1800);}
 
+/* ================= 自定义像素下拉菜单 ================= */
+let pxSelectOpen=null;
+
+function pxSelectText(sel){
+  const opt=sel.options[sel.selectedIndex];
+  return opt ? opt.textContent : '请选择';
+}
+
+function positionPxSelect(host,menu){
+  const r=host.getBoundingClientRect();
+  const margin=8, gap=6;
+  const viewportW=document.documentElement.clientWidth;
+  const viewportH=document.documentElement.clientHeight;
+  const width=Math.max(120,Math.min(r.width,viewportW-margin*2));
+  menu.style.width=width+'px';
+  menu.style.left=Math.max(margin,Math.min(r.left,viewportW-width-margin))+'px';
+
+  menu.style.maxHeight='min(310px, calc(100vh - 24px))';
+  menu.style.visibility='hidden';
+  menu.classList.add('on');
+  const natural=Math.min(menu.scrollHeight,310);
+  const below=viewportH-r.bottom-gap-margin;
+  const above=r.top-gap-margin;
+  const openUp=below<Math.min(180,natural) && above>below;
+  const allowed=Math.max(96,openUp?above:below);
+  const height=Math.min(natural,allowed);
+  menu.style.maxHeight=height+'px';
+  menu.style.top=(openUp?Math.max(margin,r.top-height-gap):Math.min(viewportH-height-margin,r.bottom+gap))+'px';
+  menu.style.visibility='visible';
+}
+
+function closePxSelect(){
+  if(!pxSelectOpen)return;
+  pxSelectOpen.host.classList.remove('open');
+  pxSelectOpen.menu.classList.remove('on');
+  pxSelectOpen.menu.remove();
+  pxSelectOpen=null;
+}
+
+function syncPxSelect(sel){
+  const host=sel.closest('.pxselect');
+  if(!host)return;
+  const label=host.querySelector('.pxselect-label');
+  if(label)label.textContent=pxSelectText(sel);
+}
+
+function openPxSelect(sel,host,trigger){
+  if(pxSelectOpen?.sel===sel){closePxSelect();return;}
+  closePxSelect();
+
+  const menu=document.createElement('div');
+  menu.className='pxselect-menu';
+  menu.setAttribute('role','listbox');
+
+  const opts=[...sel.options];
+  if(!opts.length){
+    menu.innerHTML='<div class="pxselect-empty">暂无选项</div>';
+  }else{
+    opts.forEach((opt,i)=>{
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='pxselect-option'+(opt.selected?' selected':'');
+      btn.textContent=opt.textContent;
+      btn.dataset.index=i;
+      btn.disabled=opt.disabled;
+      btn.setAttribute('role','option');
+      btn.setAttribute('aria-selected',opt.selected?'true':'false');
+      btn.onclick=()=>{
+        if(opt.disabled)return;
+        sel.selectedIndex=i;
+        syncPxSelect(sel);
+        sel.dispatchEvent(new Event('change',{bubbles:true}));
+        closePxSelect();
+        trigger.focus();
+      };
+      menu.appendChild(btn);
+    });
+  }
+
+  document.body.appendChild(menu);
+  host.classList.add('open');
+  pxSelectOpen={sel,host,trigger,menu};
+  positionPxSelect(host,menu);
+
+  const selected=menu.querySelector('.selected');
+  if(selected) selected.scrollIntoView({block:'nearest'});
+}
+
+function enhanceSelects(root=document){
+  root.querySelectorAll('select.pxinput:not([data-px-enhanced])').forEach(sel=>{
+    sel.dataset.pxEnhanced='1';
+
+    const host=document.createElement('div');
+    host.className='pxselect';
+    if(sel.style.maxWidth)host.style.maxWidth=sel.style.maxWidth;
+    if(sel.style.width)host.style.width=sel.style.width;
+
+    sel.parentNode.insertBefore(host,sel);
+    host.appendChild(sel);
+    sel.classList.add('pxselect-native');
+
+    const trigger=document.createElement('button');
+    trigger.type='button';
+    trigger.className='pxselect-trigger';
+    trigger.setAttribute('aria-haspopup','listbox');
+    trigger.innerHTML='<span class="pxselect-label"></span><span class="pxselect-caret">▼</span>';
+    host.appendChild(trigger);
+    syncPxSelect(sel);
+
+    trigger.onclick=()=>openPxSelect(sel,host,trigger);
+    trigger.onkeydown=e=>{
+      if(e.key==='Enter'||e.key===' '||e.key==='ArrowDown'||e.key==='ArrowUp'){
+        e.preventDefault();
+        openPxSelect(sel,host,trigger);
+      }
+      if(e.key==='Escape')closePxSelect();
+    };
+    sel.addEventListener('change',()=>syncPxSelect(sel));
+  });
+}
+
+document.addEventListener('pointerdown',e=>{
+  if(!pxSelectOpen)return;
+  if(pxSelectOpen.host.contains(e.target)||pxSelectOpen.menu.contains(e.target))return;
+  closePxSelect();
+});
+window.addEventListener('resize',()=>{if(pxSelectOpen)positionPxSelect(pxSelectOpen.host,pxSelectOpen.menu);});
+window.addEventListener('scroll',()=>{if(pxSelectOpen)positionPxSelect(pxSelectOpen.host,pxSelectOpen.menu);},true);
+
+
 const DB_KEY='neoncore_db_v2';
 let DB,SESSION=null,G=null,authMode='login',curCat='全部',regChoices=[],regSelected=0;
 function seed(){
@@ -122,14 +252,14 @@ function openEditProfile(){
   $('#eOk').onclick=()=>{const n=$('#eNick').value.trim();if(!n)return;me().nick=n;me().avatar={...choices[selected]};save();refreshChip();renderMe();closeModal();};
 }
 function openSettings(){openModal('<h3>⚙ 设置</h3><div class="setrow"><span>当前为本地原型</span><span>localStorage</span></div><div class="mrow"><button class="pxbtn pink" onclick="closeModal()">完成</button></div>');}
-function openModal(html,wide=false){$('#mbox').className='mbox card'+(wide?' wide':'');$('#mbody').innerHTML=html;$('#modal').classList.add('on');}
+function openModal(html,wide=false){$('#mbox').className='mbox card'+(wide?' wide':'');$('#mbody').innerHTML=html;$('#modal').classList.add('on');enhanceSelects($('#mbody'));}
 function closeModal(){$('#modal').classList.remove('on');if(G){clearInterval(G.iv);if(G.key)document.removeEventListener('keydown',G.key);G=null;}}
 $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 
 $$('.floatpix').forEach((c,i)=>{c.width=44;c.height=44;const x=c.getContext('2d');const hue=[300,270,190,320][i%4];for(let j=0;j<14;j++){x.fillStyle=`hsl(${hue+Math.random()*40},90%,60%)`;x.fillRect((Math.random()*11|0)*4,(Math.random()*11|0)*4,4,4);}});
 $('#mqTxt').textContent=('WELCOME TO NEONCORE ★ INDIE GAME COMMUNITY ★ PIXEL NEVER DIES ★ ').repeat(2);
 $('#tabLogin').onclick=()=>setMode('login');$('#tabReg').onclick=()=>setMode('reg');
-$('#aAnimal').innerHTML=avatarOptionsHTML('cat');$('#aGenAv').onclick=refreshReg;$('#aRecolor').onclick=recolorReg;$('#aAnimal').onchange=refreshReg;
+$('#aAnimal').innerHTML=avatarOptionsHTML('cat');$('#aGenAv').onclick=refreshReg;$('#aRecolor').onclick=recolorReg;$('#aAnimal').onchange=refreshReg;enhanceSelects(document);
 $('#authGo').onclick=()=>{const u=$('#aUser').value.trim(),p=$('#aPass').value,n=$('#aNick').value.trim();if(!u||!p)return $('#authErr').textContent='// 用户名和密码不能为空';if(authMode==='reg'){if(DB.users[u])return $('#authErr').textContent='// 该代号已被占用';DB.users[u]={pass:p,nick:n||u,avatar:{...(regChoices[regSelected]||AvatarLab.randomConfig('cat'))},joined:Date.now()};save();enter(u);}else{if(!DB.users[u]||DB.users[u].pass!==p)return $('#authErr').textContent='// 代号或密码错误';enter(u);}};
 $('#aPass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#authGo').click();});
 loadDB();setMode('login');
