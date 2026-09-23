@@ -671,3 +671,32 @@ header.topbar{
   background:linear-gradient(135deg,#e88252,#a163a4);
   color:#fff7ef;
 }
+
+
+/* ================= 背景灰黑渐变实验：#232323 → #2C313A ================= */
+:root{
+  --bg:#232323;
+  --bg2:#2c313a;
+}
+
+body{
+  background:linear-gradient(135deg,#232323 0%,#272a30 48%,#2c313a 100%);
+}
+
+.bgfx{
+  background:
+    radial-gradient(circle at 14% 14%,rgba(128,107,201,.12),transparent 34%),
+    radial-gradient(circle at 86% 12%,rgba(1,142,172,.09),transparent 32%),
+    radial-gradient(circle at 78% 88%,rgba(161,99,164,.08),transparent 35%),
+    radial-gradient(circle at 18% 86%,rgba(232,130,82,.045),transparent 30%),
+    linear-gradient(135deg,#232323 0%,#272a30 48%,#2c313a 100%);
+}
+
+#authScreen{
+  background:
+    radial-gradient(circle at 18% 18%,rgba(128,107,201,.13),transparent 40%),
+    radial-gradient(circle at 82% 76%,rgba(1,142,172,.10),transparent 44%),
+    radial-gradient(circle at 68% 20%,rgba(161,99,164,.065),transparent 28%),
+    repeating-linear-gradient(45deg,rgba(164,165,220,.028) 0 6px,transparent 6px 12px),
+    linear-gradient(135deg,#232323 0%,#272a30 48%,#2c313a 100%);
+}
