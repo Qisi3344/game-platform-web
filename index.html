@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0c0614">
+<title>霓核 NEONCORE · 独立游戏社区</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+<div class="bgfx"></div><div class="vig"></div><div class="scan"></div>
+
+<!-- ============ 登录 / 注册 ============ -->
+<div id="authScreen">
+  <canvas class="floatpix" style="top:12%;left:8%"></canvas>
+  <canvas class="floatpix" style="top:20%;right:10%;animation-delay:-2s"></canvas>
+  <canvas class="floatpix" style="bottom:16%;left:14%;animation-delay:-4s"></canvas>
+  <canvas class="floatpix" style="bottom:10%;right:16%;animation-delay:-1s"></canvas>
+  <div class="authbox card">
+    <div class="logo">霓核<span>//</span>NEONCORE</div>
+    <div class="sublogo">PIXEL × CYBERPUNK HARBOR<span class="cursor"></span></div>
+    <div class="authTabs">
+      <button class="pxbtn pink" id="tabLogin">登陆</button>
+      <button class="pxbtn ghost" id="tabReg">注册</button>
+    </div>
+    <div class="field"><label>// 用户名</label><input class="pxinput" id="aUser" maxlength="16" placeholder="输入你的代号"></div>
+    <div class="field"><label>// 密码</label><input class="pxinput" id="aPass" type="password" maxlength="24" placeholder="••••••••"></div>
+    <div class="field" id="nickField" style="display:none"><label>// 昵称（可不填）</label><input class="pxinput" id="aNick" maxlength="16" placeholder="别人看到的名字"></div>
+    <div class="field" id="avatarField" style="display:none"><label>// 选择头像物种</label>
+      <div class="avatar-tools">
+        <select class="pxinput" id="aAnimal"></select>
+        <button class="pxbtn small" id="aGenAv" type="button">↻ 随机生成</button>
+        <button class="pxbtn small ghost" id="aRecolor" type="button">🎨 当前换色</button>
+      </div>
+      <div class="avpick" id="aAvGrid"></div>
+      <div class="avatar-hint">先选物种，再随机生成 12 只；点中喜欢的头像后可只换颜色。注册后会保存这一只。</div>
+    </div>
+    <div class="err" id="authErr"></div>
+    <button class="pxbtn pink" style="width:100%" id="authGo">▶ 接入霓虹港</button>
+    <div class="marquee"><div id="mqTxt"></div></div>
+    <div class="authfoot">EST.2026 · INDIE GAME COMMUNITY · v0.10</div>
+  </div>
+</div>
+
+<!-- ============ 主应用 ============ -->
+<div id="app">
+  <header class="topbar">
+    <div class="brand" onclick="go('games')">霓核<b>//</b>NEONCORE</div>
+    <nav class="mainnav">
+      <button class="navbtn on" data-nav="games" onclick="go('games')">▚ 游戏区</button>
+      <button class="navbtn" data-nav="forum" onclick="go('forum')">▞ 发帖区</button>
+      <button class="navbtn" data-nav="me" onclick="go('me')">◈ 我的</button>
+    </nav>
+    <div class="userchip" onclick="go('me')">
+      <img class="avatar" id="chipAv"><div class="nick" id="chipNick"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 游戏区 -->
+    <section class="page on" id="page-games">
+      <div class="pagehead">
+        <div><h2 class="glowpink">▚ 游戏区</h2><div class="desc">UPLOAD · PLAY · 上传你的像素游戏</div></div>
+        <button class="pxbtn pink" onclick="openUpload()">+ 发布游戏</button>
+      </div>
+      <div class="searchrow">
+        <input class="pxinput" id="gSearch" placeholder="搜索游戏…" oninput="renderGames()">
+        <select class="pxinput" style="max-width:150px" id="gSort" onchange="renderGames()">
+          <option value="new">最新发布</option><option value="hot">最多游玩</option>
+        </select>
+      </div>
+      <div class="grid" id="gameGrid"></div>
+    </section>
+
+    <!-- 发帖区 -->
+    <section class="page" id="page-forum">
+      <div class="pagehead">
+        <div><h2 class="glowpink">▞ 发帖区</h2><div class="desc">交流 · 展示 · 灌水</div></div>
+        <button class="pxbtn pink" onclick="openPost()">+ 发布帖子</button>
+      </div>
+      <div class="cats" id="catBar"></div>
+      <div class="postlist" id="postList"></div>
+    </section>
+
+    <!-- 个人中心 -->
+    <section class="page" id="page-me">
+      <div class="pagehead"><div><h2 class="glowpink">◈ 用户信息</h2><div class="desc">YOUR TERMINAL</div></div>
+        <button class="pxbtn ghost small" onclick="logout()">⏻ 退出登陆</button></div>
+      <div class="card pfhead">
+        <img class="avatar" id="pfAv">
+        <div style="flex:1;min-width:180px">
+          <div class="pfname" id="pfNick"></div>
+          <div class="pfstat">
+            <span>作品 <b id="stGames">0</b></span>
+            <span>帖子 <b id="stPosts">0</b></span>
+            <span>获赞 <b id="stLikes">0</b></span>
+            <span>收藏 <b id="stStars">0</b></span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="pxbtn small" onclick="openEditProfile()">✎ 编辑资料</button>
+          <button class="pxbtn small ghost" onclick="openSettings()">⚙ 设置</button>
+        </div>
+      </div>
+      <div class="pftabs" id="pfTabs">
+        <button class="pxbtn small on" data-pt="works" onclick="pfTab('works')">我的作品</button>
+        <button class="pxbtn small" data-pt="collect" onclick="pfTab('collect')">收藏</button>
+        <button class="pxbtn small" data-pt="comments" onclick="pfTab('comments')">我的评论</button>
+      </div>
+      <div id="pfBody"></div>
+    </section>
+  </main>
+</div>
+
+<!-- 通用弹窗 -->
+<div class="modal" id="modal"><div class="mbox card" id="mbox">
+  <button class="pxbtn small ghost mclose" onclick="closeModal()">✕</button>
+  <div id="mbody"></div>
+</div></div>
+<div id="toast"></div>
+<script src="./src/avatar.js"></script>
+<script src="./src/app.js"></script>
+</body>
+</html>
