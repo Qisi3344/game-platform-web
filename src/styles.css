@@ -463,3 +463,211 @@ body{
 .pmeta .heart{color:#d88eab}
 .pmeta .star{color:#d0ad68}
 .pmeta .cmt{color:#7eb9bd}
+
+
+/* ================= 用户提供六色调色板实验 v1 ================= */
+:root{
+  --purple:#806bc9;
+  --lavender:#a4a5dc;
+  --lime:#cef262;
+  --mauve:#a163a4;
+  --cyan:#018eac;
+  --orange:#e88252;
+
+  --pink:#a163a4;
+  --pink2:#a4a5dc;
+  --amber:#e88252;
+
+  --bg:#111722;
+  --bg2:#182130;
+  --card:#182130;
+  --panel:#141b27;
+  --soft:#202a39;
+  --line:#344255;
+  --ink:#ece8df;
+  --dim:#9aa4b2;
+}
+
+/* 背景：深蓝灰为主，六色只做气氛层，不再整站发紫 */
+.bgfx{
+  background:
+    radial-gradient(circle at 14% 14%, rgba(128,107,201,.14), transparent 34%),
+    radial-gradient(circle at 86% 12%, rgba(1,142,172,.11), transparent 32%),
+    radial-gradient(circle at 78% 88%, rgba(161,99,164,.10), transparent 35%),
+    radial-gradient(circle at 18% 86%, rgba(232,130,82,.055), transparent 30%),
+    var(--bg);
+}
+.bgfx::after{
+  background-image:radial-gradient(rgba(164,165,220,.075) 1px,transparent 1.5px);
+}
+.vig{
+  background:radial-gradient(ellipse at center,transparent 64%,rgba(5,8,14,.50));
+}
+
+/* 顶栏 / 页面结构 */
+header.topbar{
+  background:rgba(13,18,27,.94);
+  border-bottom-color:#344255;
+  box-shadow:0 3px 0 rgba(1,142,172,.08);
+}
+.brand{
+  color:#f0ede7;
+  text-shadow:2px 2px 0 #403954,0 0 7px rgba(128,107,201,.15);
+}
+.brand b,.logo span{color:var(--purple)}
+.navbtn{color:#8f98a6}
+.navbtn:hover{color:var(--lavender)}
+.navbtn.on{color:#f0ede7}
+.navbtn.on::after{
+  background:repeating-linear-gradient(90deg,var(--cyan) 0 6px,var(--purple) 6px 12px);
+  box-shadow:0 0 5px rgba(1,142,172,.20);
+}
+
+/* 面板和卡片：蓝灰，不再像悼念黑 */
+.card,.authbox,.mbox{
+  background:
+    linear-gradient(180deg,rgba(31,42,57,.88),rgba(23,31,44,.96));
+  box-shadow:
+    0 0 0 2px #344255,
+    0 0 0 4px #0d121b,
+    0 0 0 5px rgba(128,107,201,.08);
+}
+.card::before{
+  background-image:radial-gradient(rgba(164,165,220,.06) 1px,transparent 1.5px);
+}
+.pagehead{
+  background:linear-gradient(90deg,rgba(1,142,172,.055),transparent 34%);
+  border-bottom-color:rgba(164,165,220,.11);
+}
+.pagehead h2{
+  color:#ece8df;
+  text-shadow:2px 2px 0 #3f4250;
+}
+.pagehead .desc,.sublogo,.mini .sub,.post .excerpt{color:#8f99a8}
+
+/* 输入框 */
+.pxinput{
+  background:#121a26;
+  color:#ece8df;
+  box-shadow:0 0 0 2px #344255,0 0 0 4px #0d121b;
+  caret-color:var(--cyan);
+}
+.pxinput:focus{
+  box-shadow:0 0 0 2px var(--cyan),0 0 0 4px #0d121b,0 0 10px rgba(1,142,172,.12);
+}
+.field label,.userchip .nick,.pfstat b{color:var(--lavender)}
+
+/* 主按钮：紫色为主，但不再荧光粉 */
+.pxbtn{
+  color:#e9e5dd;
+  background:#192230;
+  box-shadow:0 0 0 2px #3a4658,0 0 0 4px #0d121b,5px 5px 0 rgba(0,0,0,.34);
+}
+.pxbtn:hover{
+  box-shadow:0 0 0 2px var(--cyan),0 0 0 4px #0d121b,7px 7px 0 rgba(0,0,0,.38);
+}
+.pxbtn.pink{
+  background:linear-gradient(135deg,#806bc9,#a163a4);
+  color:#f7f3ec;
+}
+.pxbtn.ghost{background:#151e2b}
+
+/* 分类/选中：青蓝 + 紫，不再全部同一种粉紫 */
+.catbtn{
+  background:#17202d;
+  color:#929cab;
+  box-shadow:0 0 0 2px #344255;
+}
+.catbtn.on,.pftabs button.on{
+  color:#f4f0e9;
+  background:linear-gradient(135deg,#018eac,#806bc9);
+  box-shadow:0 0 0 2px #a4a5dc,0 0 8px rgba(1,142,172,.14);
+}
+
+/* 标签和状态色：六色各司其职 */
+.tag{
+  color:#081116;
+  background:#018eac;
+  box-shadow:2px 2px 0 #273445;
+}
+.tag.p{background:#a163a4;color:#f7f2ee}
+.tag.a{background:#e88252;color:#17100d}
+.pmeta .heart{color:#a163a4}
+.pmeta .star{color:#cef262}
+.pmeta .cmt{color:#018eac}
+.gmeta{color:#8794a3}
+
+/* 酸绿仅用于小状态/高亮信息，避免“电竞荧光” */
+.pfstat b:first-of-type,
+.gamehud{
+  color:#cef262;
+}
+
+/* 头像和强调框 */
+.avatar{
+  box-shadow:0 0 0 2px #455266,0 0 0 4px #0d121b;
+}
+.pfhead .avatar{
+  box-shadow:
+    0 0 0 3px #806bc9,
+    0 0 0 6px #0d121b,
+    0 0 0 8px #018eac,
+    0 0 16px rgba(128,107,201,.12);
+}
+.avpick img{
+  background:#101722;
+  box-shadow:0 0 0 2px #344255;
+}
+.avpick img.on{
+  box-shadow:0 0 0 2px #a4a5dc,0 0 9px rgba(128,107,201,.18);
+}
+
+/* 自定义下拉栏同步新调色板 */
+.pxselect-trigger{
+  background:
+    radial-gradient(circle at 2px 2px,rgba(164,165,220,.055) 1px,transparent 1.4px) 0 0/8px 8px,
+    linear-gradient(180deg,#182230,#111925);
+  box-shadow:0 0 0 2px #344255,0 0 0 4px #0d121b;
+}
+.pxselect-trigger::before{background:linear-gradient(var(--cyan),var(--purple))}
+.pxselect-caret{
+  color:var(--cyan);
+  background:#202a39;
+  box-shadow:inset 0 0 0 1px #415067;
+}
+.pxselect-menu{
+  background:
+    radial-gradient(circle at 2px 2px,rgba(164,165,220,.055) 1px,transparent 1.3px) 0 0/8px 8px,
+    linear-gradient(180deg,#1b2635 0%,#111925 100%);
+  border-color:#44536a;
+  box-shadow:0 0 0 2px #0d121b,0 0 0 3px rgba(1,142,172,.14),6px 6px 0 rgba(0,0,0,.48);
+}
+.pxselect-option{color:#b3bdc9}
+.pxselect-option:hover,.pxselect-option.active{
+  background:linear-gradient(90deg,rgba(1,142,172,.13),transparent 25%),rgba(128,107,201,.08);
+}
+.pxselect-option.selected{
+  background:linear-gradient(90deg,rgba(1,142,172,.76),rgba(128,107,201,.72));
+}
+.pxselect-option.selected::after{color:#cef262}
+
+/* 登录页：保留一点复古霓虹气氛，但不是紫色墙 */
+#authScreen{
+  background:
+    radial-gradient(circle at 18% 18%,rgba(128,107,201,.15),transparent 40%),
+    radial-gradient(circle at 82% 76%,rgba(1,142,172,.12),transparent 44%),
+    radial-gradient(circle at 68% 20%,rgba(161,99,164,.07),transparent 28%),
+    repeating-linear-gradient(45deg,rgba(164,165,220,.035) 0 6px,transparent 6px 12px),
+    #111722;
+}
+.logo{
+  text-shadow:2px 2px 0 #3c3b50,4px 4px 0 rgba(128,107,201,.18),0 0 12px rgba(1,142,172,.09);
+}
+.sublogo .cursor{background:#cef262}
+.marquee div{color:#a4a5dc}
+
+/* Toast：用珊瑚橙做短暂提示，让暖色真的出现 */
+#toast{
+  background:linear-gradient(135deg,#e88252,#a163a4);
+  color:#fff7ef;
+}
