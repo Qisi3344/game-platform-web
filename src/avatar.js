@@ -23,23 +23,185 @@
   function coin(rng,p=.5){ return rng()<p; }
   function emptyGrid(w,h){ return Array.from({length:h},()=>Array(w).fill(null)); }
   function setPx(g,x,y,c){ if(g[y]&&x>=0&&x<g[0].length) g[y][x]=c; }
+  function getPx(g,x,y){ return g[y]&&x>=0&&x<g[0].length ? g[y][x] : null; }
+  function rect(g,x,y,w,h,c){ for(let yy=y;yy<y+h;yy++) for(let xx=x;xx<x+w;xx++) setPx(g,xx,yy,c); }
+  function ellipse(g,cx,cy,rx,ry,c){
+    for(let y=Math.floor(cy-ry)-1;y<=Math.ceil(cy+ry)+1;y++){
+      for(let x=Math.floor(cx-rx)-1;x<=Math.ceil(cx+rx)+1;x++){
+        const nx=(x-cx)/(rx||1), ny=(y-cy)/(ry||1);
+        if(nx*nx+ny*ny<=1) setPx(g,x,y,c);
+      }
+    }
+  }
+  function diamond(g,cx,cy,r,c){
+    for(let y=-r;y<=r;y++) for(let x=-r;x<=r;x++) if(Math.abs(x)+Math.abs(y)<=r) setPx(g,cx+x,cy+y,c);
+  }
   function mirrorFill(g,x,y,c){ setPx(g,x,y,c); setPx(g,g[0].length-1-x,y,c); }
   function shuffle(arr,rng){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
-  function drawBody(g,pal,top,bottom,peak,start,type,rng){
-    const rows=bottom-top+1;
-    for(let i=0;i<rows;i++){
-      const t=i/(rows-1||1);
-      let hw=Math.round(start+Math.sin(t*Math.PI)*peak*(.75+rng()*.12));
-      if(i<2&&coin(rng,.4)) hw--;
-      if(i>rows-3&&coin(rng,.5)) hw--;
-      hw=Math.max(2,Math.min(6,hw));
-      if(type==='robot') hw=4;
-      if(type==='fish'&&i<2) hw=Math.min(hw,4);
-      if(type==='penguin'&&i===0) hw=Math.min(hw,3);
-      if(type==='snail'&&i<2) hw=Math.min(hw,4);
-      for(let x=Math.ceil(7.5-hw);x<=Math.floor(7.5+hw);x++) setPx(g,x,top+i,pal.main);
+  function addOutline(g,pal){
+    const out=emptyGrid(16,16);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++) if(g[y][x]) out[y][x]=g[y][x];
+    for(let y=0;y<16;y++){
+      for(let x=0;x<16;x++){
+        if(!g[y][x]) continue;
+        [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{
+          const nx=x+dx, ny=y+dy;
+          if(ny>=0&&ny<16&&nx>=0&&nx<16&&!g[ny][nx]) out[ny][nx]=pal.outline;
+        });
+      }
     }
+    return out;
+  }
+
+  function addEyes(g,pal,y,wide){
+    setPx(g,5,y,pal.light); setPx(g,10,y,pal.light);
+    if(wide){ setPx(g,6,y,pal.outline); setPx(g,9,y,pal.outline); }
+  }
+
+  function faceCat(g,pal,rng){
+    ellipse(g,7.5,8.1,4.4,4.2,pal.main);
+    diamond(g,4,3,1,pal.main); diamond(g,11,3,1,pal.main);
+    setPx(g,4,2,pal.main); setPx(g,11,2,pal.main);
+    setPx(g,4,3,pal.accent); setPx(g,11,3,pal.accent);
+    rect(g,5,9,6,3,pal.belly);
+    addEyes(g,pal,7,coin(rng,.5));
+    setPx(g,7,9,pal.dark); setPx(g,8,9,pal.dark);
+    setPx(g,4,9,pal.dark); setPx(g,11,9,pal.dark);
+    if(coin(rng,.5)){ setPx(g,3,10,pal.dark); setPx(g,12,10,pal.dark); }
+    if(coin(rng,.45)){ mirrorFill(g,3,6,pal.accent2); }
+  }
+
+  function faceDog(g,pal,rng){
+    ellipse(g,7.5,8.3,4.3,4.4,pal.main);
+    rect(g,2,5,2,5,pal.main); rect(g,12,5,2,5,pal.main);
+    setPx(g,3,4,pal.main); setPx(g,12,4,pal.main);
+    rect(g,5,9,6,4,pal.belly);
+    addEyes(g,pal,7,coin(rng,.6));
+    rect(g,6,9,4,2,pal.light);
+    setPx(g,7,10,pal.dark); setPx(g,8,10,pal.dark);
+    if(coin(rng,.35)){ mirrorFill(g,4,6,pal.accent); }
+  }
+
+  function faceWolf(g,pal,rng){
+    ellipse(g,7.5,8.4,4.2,4.5,pal.main);
+    diamond(g,4,2,2,pal.main); diamond(g,11,2,2,pal.main);
+    setPx(g,4,2,pal.accent2); setPx(g,11,2,pal.accent2);
+    setPx(g,3,9,pal.main); setPx(g,12,9,pal.main); setPx(g,3,10,pal.main); setPx(g,12,10,pal.main);
+    rect(g,5,9,6,4,pal.belly);
+    rect(g,6,9,4,3,pal.light);
+    addEyes(g,pal,7,coin(rng,.55));
+    setPx(g,7,10,pal.dark); setPx(g,8,10,pal.dark);
+    setPx(g,6,11,pal.dark); setPx(g,9,11,pal.dark);
+    if(coin(rng,.6)){ mirrorFill(g,4,5,pal.accent2); }
+  }
+
+  function faceLeopard(g,pal,rng){
+    ellipse(g,7.5,8,4.6,4.1,pal.main);
+    ellipse(g,4.5,3.8,1.3,1.1,pal.main); ellipse(g,10.5,3.8,1.3,1.1,pal.main);
+    rect(g,5,9,6,3,pal.belly);
+    addEyes(g,pal,7,coin(rng,.45));
+    setPx(g,7,9,pal.dark); setPx(g,8,9,pal.dark);
+    [[4,5],[3,7],[5,10],[11,5],[12,7],[10,10],[7,4]].forEach(([x,y])=>setPx(g,x,y,pal.dark));
+    if(coin(rng,.5)){ mirrorFill(g,4,11,pal.dark); }
+  }
+
+  function faceFox(g,pal,rng){
+    ellipse(g,7.5,8.1,4.0,4.0,pal.main);
+    diamond(g,4,2,2,pal.main); diamond(g,11,2,2,pal.main);
+    setPx(g,4,2,pal.belly); setPx(g,11,2,pal.belly);
+    rect(g,5,9,6,3,pal.belly);
+    setPx(g,6,11,pal.belly); setPx(g,9,11,pal.belly);
+    addEyes(g,pal,7,true);
+    setPx(g,7,9,pal.dark); setPx(g,8,9,pal.dark);
+    setPx(g,4,9,pal.dark); setPx(g,11,9,pal.dark);
+  }
+
+  function faceRabbit(g,pal,rng){
+    ellipse(g,7.5,8.8,4.0,3.8,pal.main);
+    rect(g,4,1,2,5,pal.main); rect(g,10,1,2,5,pal.main);
+    rect(g,5,2,1,3,pal.accent); rect(g,10,2,1,3,pal.accent);
+    rect(g,5,9,6,3,pal.belly);
+    addEyes(g,pal,8,coin(rng,.4));
+    setPx(g,7,10,pal.dark); setPx(g,8,10,pal.dark);
+  }
+
+  function faceDragon(g,pal,rng){
+    ellipse(g,7.5,8.2,4.2,4.2,pal.main);
+    diamond(g,4,3,2,pal.belly); diamond(g,11,3,2,pal.belly);
+    rect(g,2,6,2,3,pal.accent2); rect(g,12,6,2,3,pal.accent2);
+    rect(g,5,9,6,3,pal.belly);
+    addEyes(g,pal,7,coin(rng,.6));
+    [5,6,7,8,9,10].forEach((x,i)=>{ if(i%2===0) setPx(g,x,4,pal.accent); });
+    setPx(g,7,9,pal.dark); setPx(g,8,9,pal.dark);
+  }
+
+  function faceFish(g,pal,rng){
+    ellipse(g,7.5,8.3,4.5,3.8,pal.main);
+    diamond(g,2,8,2,pal.main); diamond(g,13,8,2,pal.main);
+    diamond(g,7,3,1,pal.accent2); diamond(g,8,3,1,pal.accent2);
+    rect(g,5,8,6,4,pal.belly);
+    addEyes(g,pal,7,coin(rng,.4));
+    setPx(g,7,9,pal.belly); setPx(g,8,9,pal.belly);
+  }
+
+  function faceBird(g,pal,rng){
+    ellipse(g,7.5,8.2,4.2,4.0,pal.main);
+    rect(g,3,6,1,4,pal.main); rect(g,12,6,1,4,pal.main);
+    diamond(g,7,4,1,pal.accent); diamond(g,8,4,1,pal.accent);
+    rect(g,5,8,6,4,pal.belly);
+    addEyes(g,pal,7,coin(rng,.45));
+  }
+
+  function facePenguin(g,pal,rng){
+    ellipse(g,7.5,8.4,4.2,4.3,pal.main);
+    rect(g,4,5,8,8,pal.main);
+    rect(g,5,6,6,6,pal.belly);
+    rect(g,3,7,1,3,pal.main); rect(g,12,7,1,3,pal.main);
+    addEyes(g,pal,6,coin(rng,.35));
+    setPx(g,7,8,pal.accent); setPx(g,8,8,pal.accent);
+  }
+
+  function faceBat(g,pal,rng){
+    ellipse(g,7.5,8.4,3.8,3.7,pal.main);
+    diamond(g,3,4,2,pal.main); diamond(g,12,4,2,pal.main);
+    rect(g,1,6,2,2,pal.main); rect(g,13,6,2,2,pal.main);
+    addEyes(g,pal,7,coin(rng,.35));
+    rect(g,6,9,4,2,pal.belly);
+  }
+
+  function faceSnail(g,pal,rng){
+    ellipse(g,6.5,8.5,3.8,3.6,pal.main);
+    ellipse(g,6.5,8.5,2.3,2.1,pal.dark);
+    rect(g,8,10,4,2,pal.main);
+    rect(g,9,11,3,1,pal.belly);
+    setPx(g,10,4,pal.main); setPx(g,11,3,pal.accent2); setPx(g,9,4,pal.main); setPx(g,8,3,pal.accent2);
+    addEyes(g,pal,10,coin(rng,.25));
+  }
+
+  function faceGhost(g,pal,rng){
+    ellipse(g,7.5,7.7,4.2,4.2,pal.main);
+    rect(g,4,7,8,5,pal.main);
+    [4,6,8,10,12].forEach((x,i)=>setPx(g,x,12,i%2?pal.main:pal.dark));
+    addEyes(g,pal,7,coin(rng,.4));
+    setPx(g,7,9,pal.dark); setPx(g,8,9,pal.dark);
+  }
+
+  function faceSlime(g,pal,rng){
+    ellipse(g,7.5,8.5,4.6,3.8,pal.main);
+    [5,10].forEach(x=>setPx(g,x,5,pal.accent2));
+    addEyes(g,pal,8,coin(rng,.35));
+    setPx(g,7,10,pal.dark); setPx(g,8,10,pal.dark);
+    if(coin(rng,.5)){ setPx(g,4,11,pal.accent); setPx(g,11,11,pal.accent); }
+  }
+
+  function faceRobot(g,pal,rng){
+    rect(g,4,4,8,8,pal.main);
+    rect(g,5,5,6,4,pal.accent2);
+    rect(g,6,6,1,1,pal.light); rect(g,9,6,1,1,pal.light);
+    rect(g,6,10,4,1,pal.belly);
+    rect(g,7,2,2,2,pal.main); setPx(g,7,1,pal.accent); setPx(g,8,1,pal.accent);
+    setPx(g,3,6,pal.main); setPx(g,12,6,pal.main);
   }
 
   function buildAvatar(seedStr,forcedType,forcedPaletteIndex){
@@ -49,107 +211,20 @@
     const paletteIndex=Number.isInteger(forcedPaletteIndex)?((forcedPaletteIndex%palettes.length)+palettes.length)%palettes.length:Math.floor(rng()*palettes.length);
     const pal=palettes[paletteIndex];
     const g=emptyGrid(16,16);
-    const top=3+Math.floor(rng()*2), bottom=12+Math.floor(rng()*2);
-    const peakMap={cat:4,dog:4,wolf:4,leopard:4,dragon:4,fish:4,fox:4,rabbit:5,bird:4,penguin:4,bat:4,snail:4,ghost:5,slime:5,robot:4};
-    const startMap={ghost:2,slime:2};
-    drawBody(g,pal,top,bottom,peakMap[type]||4,startMap[type]||1,type,rng);
 
-    if(type==='cat'){
-      [[4,top],[4,top-1],[5,top-2],[6,top-1],[9,top-1],[10,top-2],[11,top-1],[11,top]].forEach(([x,y])=>setPx(g,x,y,pal.main));
-      setPx(g,5,top-1,pal.accent); setPx(g,10,top-1,pal.accent); setPx(g,3,top+5,pal.main); setPx(g,12,top+5,pal.main);
-    }
-    if(type==='dog'){
-      for(let y=top+1;y<top+4;y++){ setPx(g,3,y,pal.main); setPx(g,12,y,pal.main); }
-      setPx(g,4,top,pal.main); setPx(g,11,top,pal.main);
-    }
-    if(type==='wolf'){
-      [[4,top-1],[5,top-2],[10,top-1],[11,top-2],[4,top],[11,top]].forEach(([x,y])=>setPx(g,x,y,pal.main));
-      setPx(g,5,top-1,pal.accent2); setPx(g,10,top-1,pal.accent2);
-    }
-    if(type==='leopard'){
-      [[4,top],[5,top-1],[10,top-1],[11,top],[5,top-2],[10,top-2]].forEach(([x,y])=>setPx(g,x,y,pal.main));
-      [[4,top+2],[5,top+4],[4,top+6],[6,top+7]].forEach(([x,y])=>mirrorFill(g,x,y,pal.dark));
-    }
-    if(type==='dragon'){
-      [[4,top-1],[5,top-2],[10,top-1],[11,top-2]].forEach(([x,y])=>setPx(g,x,y,pal.belly));
-      for(let y=top+2;y<top+5;y++){ setPx(g,2,y,pal.accent2); setPx(g,13,y,pal.accent2); }
-      [6,7,8,9].forEach(x=>setPx(g,x,bottom+1,pal.belly));
-    }
-    if(type==='fish'){
-      for(let y=top+3;y<bottom-1;y++){ setPx(g,2,y,pal.main); setPx(g,13,y,pal.main); }
-      setPx(g,1,top+6,pal.main); setPx(g,14,top+6,pal.main); setPx(g,3,top+1,pal.accent); setPx(g,12,top+1,pal.accent); setPx(g,7,top-1,pal.accent2); setPx(g,8,top-1,pal.accent2);
-    }
-    if(type==='fox'){
-      [[3,top+1],[4,top],[5,top-1],[5,top-2],[10,top-2],[10,top-1],[11,top],[12,top+1]].forEach(([x,y])=>setPx(g,x,y,pal.main));
-      [[5,top-1],[10,top-1]].forEach(([x,y])=>setPx(g,x,y,pal.belly));
-    }
-    if(type==='rabbit'){
-      for(let y=top-3;y<top+1;y++){ setPx(g,4,y,pal.main); setPx(g,5,y,pal.main); setPx(g,10,y,pal.main); setPx(g,11,y,pal.main); }
-      for(let y=top-2;y<top+1;y++){ setPx(g,5,y,pal.accent); setPx(g,10,y,pal.accent); }
-    }
-    if(type==='bird'){
-      for(let y=top+2;y<top+5;y++){ setPx(g,3,y,pal.main); setPx(g,12,y,pal.main); }
-      setPx(g,7,top-1,pal.accent); setPx(g,8,top-1,pal.accent);
-    }
-    if(type==='penguin'){
-      for(let y=top+2;y<bottom-1;y++) for(let x=5;x<11;x++) if(coin(rng,.88)) setPx(g,x,y,pal.belly);
-      for(let y=top+3;y<top+6;y++){ setPx(g,3,y,pal.main); setPx(g,12,y,pal.main); }
-    }
-    if(type==='bat'){
-      [[4,top],[5,top-1],[10,top-1],[11,top]].forEach(([x,y])=>setPx(g,x,y,pal.main));
-      for(let y=top+1;y<top+5;y++){ setPx(g,1,y,pal.main); setPx(g,2,y,pal.main); setPx(g,13,y,pal.main); setPx(g,14,y,pal.main); }
-      setPx(g,3,top+3,pal.main); setPx(g,12,top+3,pal.main);
-    }
-    if(type==='snail'){
-      for(let y=top+1;y<bottom-1;y++) for(let x=3;x<8;x++) if((x+y)%2===0) setPx(g,x,y,pal.dark);
-      setPx(g,10,top-1,pal.main); setPx(g,11,top-2,pal.accent2); setPx(g,9,top-1,pal.main); setPx(g,8,top-2,pal.accent2);
-    }
-    if(type==='ghost'){
-      [4,6,9,11].forEach(x=>setPx(g,x,top-1,pal.main));
-      [4,6,8,10,12].forEach((x,i)=>setPx(g,x,bottom+1,i%2?pal.main:pal.dark));
-    }
-    if(type==='slime'){
-      [4,6,9,11].forEach(x=>{if(coin(rng,.8))setPx(g,x,bottom+1,pal.main);});
-      [5,10].forEach(x=>setPx(g,x,top-1,pal.accent2));
-    }
-    if(type==='robot'){
-      for(let y=top+2;y<bottom-1;y++) for(let x=4;x<12;x++) setPx(g,x,y,(x>4&&x<11&&y>top+2&&y<bottom-2)?pal.accent2:pal.main);
-      setPx(g,7,top-2,pal.main); setPx(g,8,top-2,pal.main); setPx(g,7,top-3,pal.accent); setPx(g,8,top-3,pal.accent);
+    const map = {
+      cat:faceCat, dog:faceDog, wolf:faceWolf, leopard:faceLeopard, dragon:faceDragon, fish:faceFish, fox:faceFox,
+      rabbit:faceRabbit, bird:faceBird, penguin:facePenguin, bat:faceBat, snail:faceSnail, ghost:faceGhost,
+      slime:faceSlime, robot:faceRobot
+    };
+    (map[type]||faceCat)(g,pal,rng);
+
+    for(let i=0;i<2;i++){
+      const x=3+Math.floor(rng()*10), y=4+Math.floor(rng()*8);
+      if(getPx(g,x,y)===pal.main && !['cat','wolf','dog','leopard','robot'].includes(type)) setPx(g,x,y,coin(rng,.5)?pal.accent:pal.accent2);
     }
 
-    const eyeY=top+3+Math.floor(rng()*2);
-    if(['penguin','fox','dog','wolf','cat','rabbit','leopard'].includes(type)){
-      for(let y=eyeY+1;y<=Math.min(bottom-1,eyeY+4);y++) for(let x=5;x<=10;x++) if(coin(rng,.84)) setPx(g,x,y,pal.belly);
-    } else if(type!=='robot'&&coin(rng,.65)) {
-      for(let y=eyeY+1;y<=Math.min(bottom-1,eyeY+3);y++) for(let x=5;x<=10;x++) if(coin(rng,.75)) setPx(g,x,y,pal.belly);
-    }
-
-    if(type==='robot'){
-      setPx(g,5,eyeY,pal.outline); setPx(g,6,eyeY,pal.outline); setPx(g,9,eyeY,pal.outline); setPx(g,10,eyeY,pal.outline); setPx(g,5,eyeY,pal.light); setPx(g,9,eyeY,pal.light);
-    } else {
-      setPx(g,5,eyeY,pal.outline); setPx(g,10,eyeY,pal.outline); if(coin(rng,.4)){setPx(g,6,eyeY,pal.outline);setPx(g,9,eyeY,pal.outline);} setPx(g,5,eyeY,pal.light); setPx(g,10,eyeY,pal.light);
-    }
-
-    if(['dog','wolf','fox'].includes(type)){
-      setPx(g,7,eyeY+2,pal.outline); setPx(g,8,eyeY+2,pal.outline); if(type==='wolf')setPx(g,7,eyeY+1,pal.accent2); if(type==='fox'){setPx(g,6,eyeY+3,pal.belly);setPx(g,9,eyeY+3,pal.belly);}
-    } else if(type==='cat'||type==='leopard'){
-      setPx(g,7,eyeY+2,pal.dark); setPx(g,8,eyeY+2,pal.dark); setPx(g,4,eyeY+2,pal.dark); setPx(g,11,eyeY+2,pal.dark);
-    } else if(['penguin','bird','fish'].includes(type)){
-      setPx(g,7,eyeY+2,pal.belly); setPx(g,8,eyeY+2,pal.belly);
-    } else if(type!=='ghost') {
-      setPx(g,7,eyeY+2,pal.dark); if(coin(rng,.4))setPx(g,8,eyeY+2,pal.dark);
-    }
-
-    if(type==='leopard') [[4,eyeY+1],[5,eyeY+4],[6,eyeY+5]].forEach(([x,y])=>mirrorFill(g,x,y,pal.dark));
-    if(type==='dragon') for(let y=top+1;y<bottom;y+=2) setPx(g,7,y,pal.belly);
-    for(let i=0;i<4;i++){
-      const y=top+1+Math.floor(rng()*(bottom-top)), x=2+Math.floor(rng()*4);
-      if(g[y]?.[x]&&type!=='leopard') mirrorFill(g,x,y,coin(rng,.5)?pal.accent:pal.accent2);
-    }
-
-    const out=emptyGrid(16,16);
-    for(let y=0;y<16;y++) for(let x=0;x<16;x++) if(g[y][x]) out[y][x]=g[y][x];
-    for(let y=0;y<16;y++) for(let x=0;x<16;x++) if(g[y][x]) [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{const nx=x+dx,ny=y+dy;if(ny>=0&&ny<16&&nx>=0&&nx<16&&!g[ny][nx])out[ny][nx]=pal.outline;});
+    const out=addOutline(g,pal);
     return {seed:seedStr,type,paletteIndex,pal,grid:out};
   }
 
@@ -162,13 +237,17 @@
     let dx=0,dy=0;
     if(maxX>=minX){const w=maxX-minX+1,h=maxY-minY+1;dx=Math.floor((16-w)/2)-minX;dy=Math.floor((16-h)/2)-minY;}
     const cell=size/16;
-    for(let y=0;y<16;y++)for(let x=0;x<16;x++){const c=avatar.grid[y][x];if(!c)continue;const px=x+dx,py=y+dy;if(px<0||px>=16||py<0||py>=16)continue;ctx.fillStyle=c;ctx.fillRect(px*cell,py*cell,cell,cell);}
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const c=avatar.grid[y][x]; if(!c) continue;
+      const px=x+dx, py=y+dy; if(px<0||px>=16||py<0||py>=16) continue;
+      ctx.fillStyle=c; ctx.fillRect(px*cell,py*cell,cell,cell);
+    }
     return canvas;
   }
 
   function dataUrl(config,size=64){ const cv=document.createElement('canvas'); drawAvatar(cv,config,size); return cv.toDataURL(); }
   function randomSeed(prefix='avatar'){ return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`; }
-  function randomConfig(type='all'){ const rng=Math.random; const t=type==='all'?types[Math.floor(rng()*types.length)]:type; return {seed:randomSeed(t),type:t,paletteIndex:Math.floor(rng()*palettes.length)}; }
+  function randomConfig(type='all'){ const t=type==='all'?types[Math.floor(Math.random()*types.length)]:type; return {seed:randomSeed(t),type:t,paletteIndex:Math.floor(Math.random()*palettes.length)}; }
   function generateBatch(type='all',count=12){
     const typePool=type==='all'?shuffle(types,Math.random):Array(count).fill(type);
     const palOrder=shuffle([...palettes.keys()],Math.random);
@@ -177,7 +256,7 @@
     return out;
   }
   function recolor(config){ let idx=Math.floor(Math.random()*palettes.length); if(palettes.length>1) while(idx===config.paletteIndex) idx=Math.floor(Math.random()*palettes.length); return {...config,paletteIndex:idx}; }
-  function normalize(config,fallbackSeed='avatar'){
+  function normalize(config){
     if(!config||!config.seed||!types.includes(config.type)) return randomConfig('cat');
     return {seed:String(config.seed),type:config.type,paletteIndex:Number.isInteger(config.paletteIndex)?config.paletteIndex%palettes.length:0};
   }
